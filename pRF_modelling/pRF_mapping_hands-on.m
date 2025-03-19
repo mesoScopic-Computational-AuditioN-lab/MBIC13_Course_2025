@@ -12,6 +12,7 @@
 %% ========================================================================
 %  1) Setup: Define transformations & paths
 %  ========================================================================
+%  # QUESTION: Why do we use log2 transformation instead of staying in Hz space?
 
 % Define Log2 transformations for going back and forth between Hz and log (octave)-space
 inv_transform = @(x) 2.^x;   % from log2 space to Hz
@@ -28,6 +29,9 @@ addpath(genpath('purmutation'));
 % Here, we create the set of all possible Gaussian tuning functions 
 % (the "dictionary" or "grid" for the pRF model). We do so by 
 % discretizing the frequency axis and a range of tuning widths.
+%
+% # ASSIGNMENT: the grid of sigma is assumed, try to adjust this grid and
+%               see if this will help with the overall fit.
 
 % Frequency range (in Hz): from 200 Hz to 6000 Hz, 
 steps        = 240;                                                          % number of continua steps (in this case matching stimuli)
@@ -106,20 +110,7 @@ end
 
 figure;
 
-% First row: Full-width image
-subplot(2,1,1); % Two rows, one column, first plot
-imagesc(W);
-title('Gaussian pRF Weight Matrix Across Frequency Bins');
-axis off; 
-
-% Second row: Two side-by-side plots
-subplot(2,2,3); % Two rows, two columns, third plot
-plot(prfS, 'r');
-title({'Plot of prfS', 'STD across Bins'});
-
-subplot(2,2,4); % Two rows, two columns, fourth plot
-plot(prfO, 'b');
-title({'Plot of prfO'}, {'Center Freq. across Bins'});
+% # ASSIGNMENT: plot a heatmap of the dictionary space
 
 
 %% ========================================================================
@@ -130,6 +121,10 @@ title({'Plot of prfO'}, {'Center Freq. across Bins'});
 % a frequency map (FMapTrain) that indicates the amplitude or significance
 % of each voxel's response to the frequency continuum. 
 % We'll also see how some example voxels' betas look across trials.
+%
+% ## QUESTION: Looking at the plotted beta values, what kind of Gaussian
+%              tuning curve would you expect for each of the voxels?
+%              is a Gaussian a good fit?
 
 % Load your data file (example name shown)
 dataFile        = fullfile('Betas_RH_Auditory_denoise0_cv1.mat');
@@ -179,6 +174,15 @@ sgtitle('Example Betas for Top Voxels', 'FontSize', 18, 'FontWeight', 'bold');
 %   B) Permutation-based approach for significance testing
 % We'll store the best-fitting "seed" (column in W) for each voxel under both.
 
+% ## ASSIGNMENT: Complete the missing correlation calculation, for both the
+%                gridsearch and permuations approach
+%
+% ## ASSIGNMENT: Calculate the median prfMU and prfO, and plot how they
+%                correlate to the intrain set
+%
+% ## QUESTION:   What would the benefit be of using a permuation test instead
+%                of the (classical) gridsearch
+
 % K-fold cross-validation
 kfold           = 6;
 cv              = cvpartition(ntrials, 'kfold', kfold);
@@ -221,12 +225,12 @@ for itcv = 1:(kfold + 1)
 
     % A) Grid Search: 
     %    For each voxel, find the column of Ftr that best correlates with Xtr.
-    cXtrFtr                      = corr(Xtr, Ftr);                   % [nvox x #dictionaryCols]
+    cXtrFtr                      =                                   % [nvox x #dictionaryCols]
     [bestTrainCorr, bestCol]     = max(cXtrFtr, [], 2);              % best-fitting column index
     bestSeed_grid_folds(:, itcv) = bestCol;                          % store results (overwrites each pass, as an example)
     %    Evaluate on test set
     bestDictTest                 = W(te, bestCol);                   % Each column corresponds to a voxel's best fit
-    cXteBest_grid_folds(:, itcv) = diag(corr(Xte, bestDictTest));    % Test correlation of best match
+    cXteBest_grid_folds(:, itcv) =                                   % Test correlation of best match
 
     % B) Permutation-based approach:
     %    We fit Gaussian pRF based on ranks (or any cost function you define),
@@ -239,7 +243,7 @@ for itcv = 1:(kfold + 1)
 
     % Evaluate on test set (analogous to cXteBest)
     bestDictTest                 = W(te, locRanks);  % Direct matrix indexing (no loop!)
-    cXteBest_perm_folds(:, itcv) = diag(corr(Xte, bestDictTest)); % Store test correlation
+    cXteBest_perm_folds(:, itcv) =                   % Store test correlation
 
 end
 
@@ -283,7 +287,6 @@ subplot(nRows, nCols, kfold); axis off;
 legend({'Grid Search', 'Permutation'}, 'Location', 'best', 'FontSize', 12);
 
 
-
 %% ========================================================================
 %  6) Saving data as maps
 %  ========================================================================
@@ -320,6 +323,10 @@ saveICAMap('', '', map, ...
 %
 % We compare the distribution of best-fitting pRF center frequency and 
 % tuning widths across grid search vs permutation approach.
+%
+% ## QUESTION: What do the distributions of best-fitting pRF parameters tell us? 
+%              How do the two approaches (grid search vs permutation) compare?
+
 
 % Because prfMU, prfS, prfO correspond to columns, we can index with bestSeed_xxx:
 selvox_idx = find(selvox);  % the absolute voxel indices in original data
@@ -376,6 +383,11 @@ sgtitle('Brain Level Distributions', 'FontSize', 18, 'FontWeight', 'bold');
 % and visualize the voxel’s response compared to the best-fitting Gaussian from both approaches:
 %   1) Grid Search
 %   2) Permutation-based significance testing.
+%
+% ## ASSIGNMENT: Select and visualize voxels with different correlations
+%                and tuning widths (wide)
+%
+% ## QUESTION: How does the tuning width affect the model fit?
 
 % Convert best-fitting grid indices into linear indices for extraction
 indlin          = sub2ind(size(cXtrFtr), (1:nvox)', bestSeed_grid);
