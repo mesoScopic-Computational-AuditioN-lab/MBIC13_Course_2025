@@ -7,6 +7,8 @@
 % We show two approaches:
 %   1) Grid Search by maximum correlation
 %   2) Permutation-based approach (to assess significance of the peak)
+%
+% Sample files: 'https://surfdrive.surf.nl/files/index.php/s/h5kNQv0xSJ4BqUL'
 
 
 %% ========================================================================
