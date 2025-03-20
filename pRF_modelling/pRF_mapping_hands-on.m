@@ -12,7 +12,8 @@
 %% ========================================================================
 %  1) Setup: Define transformations & paths
 %  ========================================================================
-%  # QUESTION: Why do we use log2 transformation instead of staying in Hz space?
+%  # QUESTION: Why do we use log2 transformation instead of staying in 
+%              Hz domain? Is this approach necessary for all types of data?
 
 % Define Log2 transformations for going back and forth between Hz and log (octave)-space
 inv_transform = @(x) 2.^x;   % from log2 space to Hz
@@ -30,8 +31,9 @@ addpath(genpath('purmutation'));
 % (the "dictionary" or "grid" for the pRF model). We do so by 
 % discretizing the frequency axis and a range of tuning widths.
 %
-% # ASSIGNMENT: the grid of sigma is assumed, try to adjust this grid and
-%               see if this will help with the overall fit.
+% # ASSIGNMENT: the grid of sigma values used in pRF modeling is assumed, 
+%               Try adjusting this grid and observe whether it imporves the 
+%               overall fit.
 
 % Frequency range (in Hz): from 200 Hz to 6000 Hz, 
 steps        = 240;                                                          % number of continua steps (in this case matching stimuli)
@@ -69,6 +71,9 @@ disp(['From ~', num2str(approx_sigma(end)), ' to ', num2str(approx_sigma(1)), ' 
 %
 % Here, we create the dictionary for al gaussian pRF shapes, 
 % where W is the prfMU x prfS matrix.
+%
+% # ASSIGNMENT: Plot a heatmap of the dictionary space for your new grid. 
+%               Does the resulting pattern look reasonable?
 
 % Calculate needed sizes for variables
 musteps    = numel(muarray);           % # of center-frequency steps
@@ -122,9 +127,10 @@ figure;
 % of each voxel's response to the frequency continuum. 
 % We'll also see how some example voxels' betas look across trials.
 %
-% ## QUESTION: Looking at the plotted beta values, what kind of Gaussian
-%              tuning curve would you expect for each of the voxels?
-%              is a Gaussian a good fit?
+% ## QUESTION: Based on the plotted beta values, what shape of tuning curve 
+%              would best describe each voxel s response? Does a Gaussian 
+%              provide a good fit, or might another function better capture 
+%              the data?
 
 % Load your data file (example name shown)
 dataFile        = fullfile('Betas_RH_Auditory_denoise0_cv1.mat');
@@ -173,15 +179,17 @@ sgtitle('Example Betas for Top Voxels', 'FontSize', 18, 'FontWeight', 'bold');
 %   A) Grid Search by max correlation
 %   B) Permutation-based approach for significance testing
 % We'll store the best-fitting "seed" (column in W) for each voxel under both.
-
-% ## ASSIGNMENT: Complete the missing correlation calculation, for both the
-%                gridsearch and permuations approach
 %
-% ## ASSIGNMENT: Calculate the median prfMU and prfO, and plot how they
-%                correlate to the intrain set
+% ## ASSIGNMENT: Reimplement the missing correlation calculation for both 
+%                the grid search and permutation approaches. 
+%                Then, identify the column with the highest correlation 
+%                in the grid search results.
 %
-% ## QUESTION:   What would the benefit be of using a permuation test instead
-%                of the (classical) gridsearch
+% ## ASSIGNMENT: Calculate the median values of prfMU and prfO, then plot 
+%                their correlation with the in-train set.
+%
+% ## QUESTION:   What are the advantages of using a permutation test over 
+%                a classical grid search? 
 
 % K-fold cross-validation
 kfold           = 6;
@@ -226,7 +234,7 @@ for itcv = 1:(kfold + 1)
     % A) Grid Search: 
     %    For each voxel, find the column of Ftr that best correlates with Xtr.
     cXtrFtr                      =                                   % [nvox x #dictionaryCols]
-    [bestTrainCorr, bestCol]     = max(cXtrFtr, [], 2);              % best-fitting column index
+    [bestTrainCorr, bestCol]     =                                   % best-fitting column index
     bestSeed_grid_folds(:, itcv) = bestCol;                          % store results (overwrites each pass, as an example)
     %    Evaluate on test set
     bestDictTest                 = W(te, bestCol);                   % Each column corresponds to a voxel's best fit
@@ -324,8 +332,13 @@ saveICAMap('', '', map, ...
 % We compare the distribution of best-fitting pRF center frequency and 
 % tuning widths across grid search vs permutation approach.
 %
-% ## QUESTION: What do the distributions of best-fitting pRF parameters tell us? 
-%              How do the two approaches (grid search vs permutation) compare?
+% ## QUESTION: What insights do the distributions of best-fitting pRF 
+%              parameters provide? How do the results from the grid search 
+%              and permutation approaches compare, and what might this 
+%              reveal about the modeling process?
+%
+% ## Follow-up: Does your chosen distribution of Sigmas adequately describe 
+%               the data - Why (not)?
 
 
 % Because prfMU, prfS, prfO correspond to columns, we can index with bestSeed_xxx:
@@ -385,9 +398,17 @@ sgtitle('Brain Level Distributions', 'FontSize', 18, 'FontWeight', 'bold');
 %   2) Permutation-based significance testing.
 %
 % ## ASSIGNMENT: Select and visualize voxels with different correlations
-%                and tuning widths (wide)
+%                and tuning widths (i.e. broader tuning).
 %
-% ## QUESTION: How does the tuning width affect the model fit?
+% ## QUESTION: How does tuning width influence the model fit? Does a 
+%              broader or narrower tuning lead to a better representation 
+%              of the data?
+%
+% ## ASSIGNMENT: Plot a voxel with high correlation strength where the pRFO
+%                values from the grid search and permutation testing differ 
+%                substantially. What do you expect to observe in terms of 
+%                model fit and parameter estimates?
+
 
 % Convert best-fitting grid indices into linear indices for extraction
 indlin          = sub2ind(size(cXtrFtr), (1:nvox)', bestSeed_grid);
